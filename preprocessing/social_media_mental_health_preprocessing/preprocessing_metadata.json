@@ -1,0 +1,63 @@
+{
+  "dataset": "social_media_mental_health",
+  "train_shape": [
+    6392,
+    11
+  ],
+  "test_shape": [
+    1599,
+    11
+  ],
+  "target_column": "PHQ_9_Severity",
+  "encoding_mapping": {
+    "Gender": {
+      "Female": 0,
+      "Male": 1
+    },
+    "User_Archetype": {
+      "Average User": 0,
+      "Digital Minimalist": 1,
+      "Hyper-Connected": 2,
+      "Passive Scroller": 3
+    },
+    "Primary_Platform": {
+      "Facebook": 0,
+      "Instagram": 1,
+      "LinkedIn": 2,
+      "Snapchat": 3,
+      "TikTok": 4,
+      "Twitter/X": 5,
+      "YouTube": 6
+    },
+    "Dominant_Content_Type": {
+      "Educational/Tech": 0,
+      "Entertainment/Comedy": 1,
+      "Gaming": 2,
+      "Lifestyle/Fashion": 3,
+      "News/Politics": 4,
+      "Self-Help/Motivation": 5
+    },
+    "Activity_Type": {
+      "Active": 0,
+      "Passive": 1
+    },
+    "GAD_7_Severity": {
+      "Mild": 0,
+      "Minimal": 1,
+      "Moderate": 2,
+      "Severe": 3
+    },
+    "PHQ_9_Severity": {
+      "Mild": 0,
+      "Moderate": 1,
+      "Moderately Severe": 2,
+      "None-Minimal": 3,
+      "Severe": 4
+    }
+  },
+  "numeric_columns": [
+    "Age",
+    "Daily_Screen_Time_Hours",
+    "Sleep_Duration_Hours"
+  ]
+}
