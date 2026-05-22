@@ -56,7 +56,7 @@ jobs:
           git add preprocessing/social_media_mental_health_preprocessing/
           
           # Hanya commit jika ada perubahan file
-          git diff --cached --quiet || git commit -m "ci: update preprocessed dataset [run #5]"
+          git diff --cached --quiet || git commit -m "ci: update preprocessed dataset [run #${{ github.run_number }}]"
           
           # Pull dengan rebase untuk menggabungkan commit terbaru dari GitHub
           git pull --rebase origin main
