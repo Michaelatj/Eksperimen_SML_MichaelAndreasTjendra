@@ -11,14 +11,19 @@ Cara pakai:
 Output:
     social_media_mental_health_preprocessing/train.csv
     social_media_mental_health_preprocessing/test.csv
+    social_media_mental_health_preprocessing/scaler.pkl
+    social_media_mental_health_preprocessing/label_encoders.pkl
+    social_media_mental_health_preprocessing/preprocessing_metadata.json
 """
 
 import os
+import json
 import argparse
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+import joblib
 
 
 # ──────────────────────────────────────────────
@@ -57,11 +62,11 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     """
     for col in df.select_dtypes(include=np.number).columns:
         if df[col].isnull().sum() > 0:
-            df[col].fillna(df[col].median(), inplace=True)
+            df[col] = df[col].fillna(df[col].median())
 
     for col in df.select_dtypes(include='object').columns:
         if df[col].isnull().sum() > 0:
-            df[col].fillna(df[col].mode()[0], inplace=True)
+            df[col] = df[col].fillna(df[col].mode()[0])
 
     total_missing = df.isnull().sum().sum()
     print(f"[handle_missing_values] Total missing after handling: {total_missing}")
@@ -83,14 +88,36 @@ def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
 # ──────────────────────────────────────────────
 # 5. ENCODING KOLOM KATEGORIKAL
 # ──────────────────────────────────────────────
-def encode_categorical(df: pd.DataFrame) -> pd.DataFrame:
-    """Label-encode semua kolom kategorikal (termasuk target PHQ_9_Severity)."""
-    le = LabelEncoder()
+def encode_categorical(df: pd.DataFrame, output_dir: str) -> tuple[pd.DataFrame, dict]:
+    """
+    Label-encode semua kolom kategorikal.
+    Menyimpan mapping encoder untuk inference nanti.
+    
+    Returns:
+        df: DataFrame dengan kolom kategorikal ter-encoded
+        encoders_dict: Dictionary mapping {col_name: {value: encoded_value}}
+    """
+    encoders = {}
+    encoders_dict = {}
     cat_cols = df.select_dtypes(include='object').columns.tolist()
+    
     for col in cat_cols:
+        le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
+        
+        # Simpan mapping untuk inference
+        encoders[col] = le
+        encoders_dict[col] = dict(zip(le.classes_, le.transform(le.classes_)))
+    
+    # Simpan encoder objects ke file
+    joblib.dump(encoders, os.path.join(output_dir, 'label_encoders.pkl'))
+    
+    # Simpan mapping JSON untuk referensi
+    with open(os.path.join(output_dir, 'encoding_mapping.json'), 'w') as f:
+        json.dump(encoders_dict, f, indent=2)
+    
     print(f"[encode_categorical] Encoded columns: {cat_cols}")
-    return df
+    return df, encoders_dict
 
 
 # ──────────────────────────────────────────────
@@ -122,6 +149,7 @@ def handle_outliers(df: pd.DataFrame,
 # 7. SPLIT & NORMALISASI
 # ──────────────────────────────────────────────
 def split_and_scale(df: pd.DataFrame,
+                    output_dir: str,
                     target_col: str = 'PHQ_9_Severity',
                     test_size: float = 0.2,
                     random_state: int = 42):
@@ -130,7 +158,7 @@ def split_and_scale(df: pd.DataFrame,
     normalisasi fitur numerik menggunakan StandardScaler.
 
     Returns:
-        X_train, X_test, y_train, y_test (sebagai DataFrame/Series)
+        X_train, X_test, y_train, y_test
     """
     X = df.drop(columns=[target_col])
     y = df[target_col]
@@ -145,6 +173,10 @@ def split_and_scale(df: pd.DataFrame,
     scaler = StandardScaler()
     X_train[num_cols] = scaler.fit_transform(X_train[num_cols])
     X_test[num_cols]  = scaler.transform(X_test[num_cols])
+    
+    # Simpan scaler untuk inference nanti
+    joblib.dump(scaler, os.path.join(output_dir, 'scaler.pkl'))
+    print(f"[split_and_scale] Scaler saved to {output_dir}/scaler.pkl")
 
     print(f"[split_and_scale] Train: {X_train.shape}, Test: {X_test.shape}")
     return X_train, X_test, y_train, y_test
@@ -186,15 +218,30 @@ def preprocess_pipeline(input_filepath: str,
     print("  Automate Preprocessing - Social Media & Mental Health")
     print("=" * 50)
 
+    # Pastikan output_dir sudah ada sebelum encode_categorical dan split_and_scale
+    os.makedirs(output_dir, exist_ok=True)
+
     df = load_data(input_filepath)
     df = drop_irrelevant_columns(df)
     df = handle_missing_values(df)
     df = remove_duplicates(df)
-    df = encode_categorical(df)
+    df, encoders_dict = encode_categorical(df, output_dir)
     df = handle_outliers(df)
 
-    X_train, X_test, y_train, y_test = split_and_scale(df)
+    X_train, X_test, y_train, y_test = split_and_scale(df, output_dir)
     save_preprocessed(X_train, X_test, y_train, y_test, output_dir)
+
+    # Simpan metadata preprocessing
+    metadata = {
+        "dataset": "social_media_mental_health",
+        "train_shape": X_train.shape,
+        "test_shape": X_test.shape,
+        "target_column": "PHQ_9_Severity",
+        "encoding_mapping": encoders_dict,
+        "numeric_columns": ['Age', 'Daily_Screen_Time_Hours', 'Sleep_Duration_Hours']
+    }
+    with open(os.path.join(output_dir, 'preprocessing_metadata.json'), 'w') as f:
+        json.dump(metadata, f, indent=2)
 
     print("\n[DONE] Preprocessing selesai. Data siap dilatih.")
     return X_train, X_test, y_train, y_test
