@@ -1,21 +1,3 @@
-"""
-automate_Michael.py
---------------------
-Script otomatisasi preprocessing dataset Social Media & Mental Health.
-Mengembalikan data yang sudah siap dilatih (train.csv & test.csv)
-di folder 'social_media_mental_health_preprocessing/'.
-
-Cara pakai:
-    python automate_Michael.py --input social_media_mental_health.csv
-
-Output:
-    social_media_mental_health_preprocessing/train.csv
-    social_media_mental_health_preprocessing/test.csv
-    social_media_mental_health_preprocessing/scaler.pkl
-    social_media_mental_health_preprocessing/label_encoders.pkl
-    social_media_mental_health_preprocessing/preprocessing_metadata.json
-"""
-
 import os
 import json
 import argparse
@@ -105,9 +87,13 @@ def encode_categorical(df: pd.DataFrame, output_dir: str) -> tuple[pd.DataFrame,
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
         
-        # Simpan mapping untuk inference
+        # Simpan mapping untuk inference — convert numpy int64 ke Python int
+        mapping = {}
+        for cls, encoded in zip(le.classes_, le.transform(le.classes_)):
+            mapping[str(cls)] = int(encoded)
+        
         encoders[col] = le
-        encoders_dict[col] = dict(zip(le.classes_, le.transform(le.classes_)))
+        encoders_dict[col] = mapping
     
     # Simpan encoder objects ke file
     joblib.dump(encoders, os.path.join(output_dir, 'label_encoders.pkl'))
@@ -234,8 +220,8 @@ def preprocess_pipeline(input_filepath: str,
     # Simpan metadata preprocessing
     metadata = {
         "dataset": "social_media_mental_health",
-        "train_shape": X_train.shape,
-        "test_shape": X_test.shape,
+        "train_shape": list(X_train.shape),
+        "test_shape": list(X_test.shape),
         "target_column": "PHQ_9_Severity",
         "encoding_mapping": encoders_dict,
         "numeric_columns": ['Age', 'Daily_Screen_Time_Hours', 'Sleep_Duration_Hours']
