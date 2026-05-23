@@ -7,20 +7,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 import joblib
 
-
-# ──────────────────────────────────────────────
-# 1. LOAD DATA
-# ──────────────────────────────────────────────
+# LOAD DATA
 def load_data(filepath: str) -> pd.DataFrame:
     """Memuat dataset CSV dari filepath yang diberikan."""
     df = pd.read_csv(filepath)
     print(f"[load_data] Dataset loaded: {df.shape[0]} rows, {df.shape[1]} cols")
     return df
 
-
-# ──────────────────────────────────────────────
-# 2. HAPUS KOLOM TIDAK RELEVAN
-# ──────────────────────────────────────────────
+# HAPUS KOLOM TIDAK RELEVAN
 def drop_irrelevant_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     Hapus kolom identifier (User_ID) dan kolom raw skor yang sudah
@@ -33,9 +27,7 @@ def drop_irrelevant_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ──────────────────────────────────────────────
-# 3. TANGANI MISSING VALUES
-# ──────────────────────────────────────────────
+# TANGANI MISSING VALUES
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     """
     Isi missing values:
@@ -55,9 +47,7 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ──────────────────────────────────────────────
-# 4. HAPUS DUPLIKAT
-# ──────────────────────────────────────────────
+# HAPUS DUPLIKAT
 def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     """Hapus baris duplikat."""
     before = len(df)
@@ -66,10 +56,7 @@ def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     print(f"[remove_duplicates] Removed {before - after} duplicate rows → shape: {df.shape}")
     return df
 
-
-# ──────────────────────────────────────────────
-# 5. ENCODING KOLOM KATEGORIKAL
-# ──────────────────────────────────────────────
+# ENCODING KOLOM KATEGORIKAL
 def encode_categorical(df: pd.DataFrame, output_dir: str) -> tuple[pd.DataFrame, dict]:
     """
     Label-encode semua kolom kategorikal.
@@ -105,10 +92,7 @@ def encode_categorical(df: pd.DataFrame, output_dir: str) -> tuple[pd.DataFrame,
     print(f"[encode_categorical] Encoded columns: {cat_cols}")
     return df, encoders_dict
 
-
-# ──────────────────────────────────────────────
-# 6. DETEKSI & TANGANI OUTLIER (IQR CLIPPING)
-# ──────────────────────────────────────────────
+# DETEKSI & TANGANI OUTLIER (IQR CLIPPING)
 def handle_outliers(df: pd.DataFrame,
                     cols: list = None) -> pd.DataFrame:
     """
@@ -130,10 +114,7 @@ def handle_outliers(df: pd.DataFrame,
     print(f"[handle_outliers] Outlier clipped for: {cols}")
     return df
 
-
-# ──────────────────────────────────────────────
-# 7. SPLIT & NORMALISASI
-# ──────────────────────────────────────────────
+# SPLIT & NORMALISASI
 def split_and_scale(df: pd.DataFrame,
                     output_dir: str,
                     target_col: str = 'PHQ_9_Severity',
@@ -167,10 +148,7 @@ def split_and_scale(df: pd.DataFrame,
     print(f"[split_and_scale] Train: {X_train.shape}, Test: {X_test.shape}")
     return X_train, X_test, y_train, y_test
 
-
-# ──────────────────────────────────────────────
-# 8. SIMPAN OUTPUT
-# ──────────────────────────────────────────────
+# SIMPAN OUTPUT
 def save_preprocessed(X_train, X_test, y_train, y_test,
                        output_dir: str = 'social_media_mental_health_preprocessing'):
     """Simpan dataset train dan test ke folder output."""
@@ -184,10 +162,7 @@ def save_preprocessed(X_train, X_test, y_train, y_test,
 
     print(f"[save_preprocessed] Saved:\n  {train_path}\n  {test_path}")
 
-
-# ──────────────────────────────────────────────
 # MAIN PIPELINE
-# ──────────────────────────────────────────────
 def preprocess_pipeline(input_filepath: str,
                          output_dir: str = 'social_media_mental_health_preprocessing'):
     """
@@ -233,9 +208,7 @@ def preprocess_pipeline(input_filepath: str,
     return X_train, X_test, y_train, y_test
 
 
-# ──────────────────────────────────────────────
 # ENTRY POINT
-# ──────────────────────────────────────────────
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Automate preprocessing Social Media & Mental Health dataset.')
     parser.add_argument('--input',  type=str, default='social_media_mental_health.csv',
